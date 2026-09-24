@@ -12,11 +12,16 @@ type InstallPromptEvent = Event & {
   userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }>;
 };
 
+function isStandalone() {
+  return window.matchMedia('(display-mode: standalone)').matches || Boolean((navigator as Navigator & { standalone?: boolean }).standalone);
+}
+
 export function WelcomeScreen() {
   const navigate = useNavigate();
   const setMode = useSessionStore((state) => state.setMode);
   const [installPrompt, setInstallPrompt] = useState<InstallPromptEvent | null>(null);
-  const [showInstall, setShowInstall] = useState(false);
+  const [showInstall, setShowInstall] = useState(() => !isStandalone());
+  const [installHelp, setInstallHelp] = useState(false);
 
   useEffect(() => {
     const handleInstallPrompt = (event: Event) => {
@@ -29,7 +34,10 @@ export function WelcomeScreen() {
   }, []);
 
   async function installApp() {
-    if (!installPrompt) return;
+    if (!installPrompt) {
+      setInstallHelp(true);
+      return;
+    }
     await installPrompt.prompt();
     await installPrompt.userChoice;
     setInstallPrompt(null);
@@ -60,7 +68,7 @@ export function WelcomeScreen() {
             <div className="install-card__icon"><Download size={20} aria-hidden="true" /></div>
             <div>
               <h2>Add Praanaika to your home screen</h2>
-              <p>It keeps your view close and ready, even when you are offline.</p>
+              <p>{installHelp ? 'Open your browser menu and choose “Install app” or “Add to Home Screen”.' : 'It keeps your view close and ready, even when you are offline.'}</p>
             </div>
             <Button onClick={installApp}>Install app</Button>
             <button className="text-button" onClick={() => setShowInstall(false)}>Continue in browser</button>
