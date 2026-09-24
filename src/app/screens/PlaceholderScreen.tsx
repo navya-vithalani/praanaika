@@ -1,6 +1,8 @@
 import { Wind } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { Card } from '../../components/ui/Card';
 import { Mascot } from '../../components/mascot/Mascot';
+import { useSessionStore } from '../../store/sessionStore';
 
 interface PlaceholderScreenProps {
   title: string;
@@ -9,6 +11,14 @@ interface PlaceholderScreenProps {
 }
 
 export function PlaceholderScreen({ title, eyebrow, featured = false }: PlaceholderScreenProps) {
+  const navigate = useNavigate();
+  const resetProfile = useSessionStore((state) => state.resetProfile);
+
+  function startOver() {
+    resetProfile();
+    navigate('/welcome', { replace: true });
+  }
+
   return (
     <main className="screen">
       <p className="eyebrow">{eyebrow}</p>
@@ -34,6 +44,7 @@ export function PlaceholderScreen({ title, eyebrow, featured = false }: Placehol
           <Wind size={30} strokeWidth={1.5} aria-hidden="true" />
           <h2>This space is ready for step {title === 'You' ? '7' : '4'}.</h2>
           <p>The shell is in place. This tab will become useful as the next build slice lands.</p>
+          {title === 'You' && <button className="text-button" onClick={startOver}>Start over from Welcome</button>}
         </Card>
       )}
     </main>
