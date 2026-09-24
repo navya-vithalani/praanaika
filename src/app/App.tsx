@@ -3,6 +3,7 @@ import { AppShell } from './shell/AppShell';
 import { PlaceholderScreen } from './screens/PlaceholderScreen';
 import { WelcomeScreen } from './screens/WelcomeScreen';
 import { useSessionStore } from '../store/sessionStore';
+import { GemScreen, HubScreen, TalkScreen, TodayScreen, YouScreen } from './screens/TabScreens';
 
 export function App() {
   return (
@@ -11,11 +12,11 @@ export function App() {
       <Route path="/about" element={<PlaceholderScreen title="About Praanaika" eyebrow="Body, Environment, Baseline" />} />
       <Route element={<ProfileGuard />}>
         <Route element={<AppShell />}>
-          <Route path="/talk" element={<PlaceholderScreen title="Talk" eyebrow="Your day, in your words" />} />
-          <Route path="/gem" element={<PlaceholderScreen title="Gem" eyebrow="Wearable signals" />} />
-          <Route path="/today" element={<PlaceholderScreen title="Today" eyebrow="Your baseline, gently noticed" featured />} />
-          <Route path="/hub" element={<PlaceholderScreen title="Hub" eyebrow="The room around you" />} />
-          <Route path="/you" element={<PlaceholderScreen title="You" eyebrow="Your profile and privacy" />} />
+          <Route path="/talk" element={<TalkScreen />} />
+          <Route path="/gem" element={<GemScreen />} />
+          <Route path="/today" element={<TodayScreen />} />
+          <Route path="/hub" element={<HubScreen />} />
+          <Route path="/you" element={<YouScreen />} />
           <Route path="*" element={<ModeGuard />} />
         </Route>
       </Route>
