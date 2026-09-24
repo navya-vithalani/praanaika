@@ -9,7 +9,7 @@ interface SessionStore {
   setDemoDay: (demoDay: number) => void;
 }
 
-const initial = readStorage('session.v1', { mode: 'demo' as Mode, demoDay: 56 });
+const initial = readStorage('session.v1', { mode: 'none' as Mode, demoDay: 56 });
 
 export const useSessionStore = create<SessionStore>((set) => ({
   ...initial,
