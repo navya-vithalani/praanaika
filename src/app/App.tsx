@@ -1,0 +1,18 @@
+import { Navigate, Route, Routes } from 'react-router-dom';
+import { AppShell } from './shell/AppShell';
+import { PlaceholderScreen } from './screens/PlaceholderScreen';
+
+export function App() {
+  return (
+    <Routes>
+      <Route element={<AppShell />}>
+        <Route path="/talk" element={<PlaceholderScreen title="Talk" eyebrow="Your day, in your words" />} />
+        <Route path="/gem" element={<PlaceholderScreen title="Gem" eyebrow="Wearable signals" />} />
+        <Route path="/today" element={<PlaceholderScreen title="Today" eyebrow="Your baseline, gently noticed" featured />} />
+        <Route path="/hub" element={<PlaceholderScreen title="Hub" eyebrow="The room around you" />} />
+        <Route path="/you" element={<PlaceholderScreen title="You" eyebrow="Your profile and privacy" />} />
+        <Route path="*" element={<Navigate to="/today" replace />} />
+      </Route>
+    </Routes>
+  );
+}

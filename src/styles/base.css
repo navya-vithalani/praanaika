@@ -1,0 +1,12 @@
+body {
+  color: var(--color-ink);
+  background: var(--color-bg);
+  font-family: var(--font-body);
+  font-size: var(--text-md);
+  line-height: var(--leading-normal);
+  -webkit-font-smoothing: antialiased;
+}
+h1, h2, h3 { margin: 0; font-family: var(--font-display); font-weight: var(--weight-bold); line-height: var(--leading-tight); }
+h1 { font-size: var(--text-3xl); letter-spacing: 0; }
+h2 { font-size: var(--text-xl); }
+p { margin: 0; }
