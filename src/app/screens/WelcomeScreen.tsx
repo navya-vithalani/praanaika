@@ -16,6 +16,14 @@ function isStandalone() {
   return window.matchMedia('(display-mode: standalone)').matches || Boolean((navigator as Navigator & { standalone?: boolean }).standalone);
 }
 
+function installHelpText() {
+  const userAgent = navigator.userAgent.toLowerCase();
+  if (/iphone|ipad|ipod/.test(userAgent)) return 'Tap Share, then Add to Home Screen.';
+  const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+  if (window.location.protocol !== 'https:' && !isLocal) return 'This phone URL is HTTP. Installation requires the deployed HTTPS URL.';
+  return 'Open your browser menu and choose Install app or Add to Home Screen.';
+}
+
 export function WelcomeScreen() {
   const navigate = useNavigate();
   const setMode = useSessionStore((state) => state.setMode);
@@ -68,7 +76,7 @@ export function WelcomeScreen() {
             <div className="install-card__icon"><Download size={20} aria-hidden="true" /></div>
             <div>
               <h2>Add Praanaika to your home screen</h2>
-              <p>{installHelp ? 'Open your browser menu and choose “Install app” or “Add to Home Screen”.' : 'It keeps your view close and ready, even when you are offline.'}</p>
+              <p>{installHelp ? installHelpText() : 'It keeps your view close and ready, even when you are offline.'}</p>
             </div>
             <Button onClick={installApp}>Install app</Button>
             <button className="text-button" onClick={() => setShowInstall(false)}>Continue in browser</button>

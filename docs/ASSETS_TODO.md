@@ -11,10 +11,14 @@ Placeholders are intentionally kept under these stable names so real brand files
 
 ## App icons
 
-- `public/icons/icon-192.png` - standard Android/PWA icon.
-- `public/icons/icon-512.png` - large Android/PWA icon.
-- `public/icons/maskable-512.png` - maskable PWA icon with safe padding.
-- `public/apple-touch-icon.png` - 180px iOS home-screen icon.
+- `public/icons/icon-192.svg` - current standard Android/PWA placeholder icon.
+- `public/icons/icon-512.svg` - current large Android/PWA placeholder icon.
+- `public/icons/maskable-512.svg` - current maskable PWA placeholder icon with safe padding.
+- `public/apple-touch-icon.png` - final 180px iOS home-screen icon to supply later.
+
+## PWA manifest
+
+- `public/manifest.json` - install metadata, standalone display settings, theme colors, icons, and Today/Talk shortcuts.
 
 ## Product and story imagery
 
