@@ -6,8 +6,9 @@ import { Card } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { Mascot } from '../../components/mascot/Mascot';
 import { useSessionStore } from '../../store/sessionStore';
+import { useActiveData } from '../../data/hooks/useActiveData';
 
-const disclaimer = 'Observations about your patterns, not medical advice.';
+const disclaimer = 'Praanaika shares observations about your own patterns. It is not medical advice or a diagnosis. Your doctor makes every decision.';
 
 function Header({ eyebrow, title, action }: { eyebrow: string; title: string; action?: ReactNode }) {
   return <header className="page-header"><div><p className="eyebrow">{eyebrow}</p><h1>{title}</h1></div>{action}</header>;
@@ -19,14 +20,18 @@ function Stat({ icon: Icon, label, value, detail, tone = '' }: { icon: typeof Wi
 
 export function TodayScreen() {
   const mode = useSessionStore((state) => state.mode);
+  const demoDay = useSessionStore((state) => state.demoDay);
+  const data = useActiveData();
   const navigate = useNavigate();
   const [location, setLocation] = useState('Bengaluru');
+  const [expanded, setExpanded] = useState(false);
+  const insight = data.insights[0];
   return <main className="screen">
     <Header eyebrow={mode === 'demo' ? 'Good evening, Meera' : 'Your day, gently noticed'} title="Today" action={<button className="location-chip" onClick={() => setLocation(location === 'Bengaluru' ? 'Choose city' : 'Bengaluru')}><MapPin size={15} aria-hidden="true" />{location}</button>} />
-    <Card className="insight-panel">
-      <div className="insight-panel__top"><span className="source-label"><Sparkles size={15} aria-hidden="true" /> Pran says</span><span className="chip">Day {mode === 'demo' ? '56' : '0'}</span></div>
-      <div className="insight-panel__body"><Mascot mood="happy" size={76} /><div><h2>Your room felt a little quieter this evening.</h2><p>Noise stayed in a calmer range than your recent demo baseline. I’m sharing an observation, not a cause.</p></div></div>
-      <button className="panel-link">Why I’m saying this <ArrowUpRight size={15} aria-hidden="true" /></button>
+    <Card className={`insight-panel insight-panel--${insight?.tier ?? 'direct'} insight-sources--${insight?.sources.join('-') ?? 'self'}`}>
+      <div className="insight-panel__top"><span className="source-label"><Sparkles size={15} aria-hidden="true" /> Pran says</span><span className="chip">Day {mode === 'demo' ? demoDay : data.checkins.length ? '1' : '0'}</span></div>
+      <div className="insight-panel__body"><Mascot mood="happy" size={76} /><div><h2>{insight?.headline ?? 'I do not know your rhythm yet.'}</h2><p>{insight?.body ?? 'Share a check-in and I will start learning your own baseline.'}</p></div></div>
+      {insight?.tier === 'personal' && <span className="personal-badge">Just for you</span>}<button className="panel-link" onClick={() => setExpanded(!expanded)}>Why I’m saying this <ArrowUpRight size={15} aria-hidden="true" /></button>{expanded && <div className="insight-evidence"><strong>Here’s what I looked at:</strong>{(insight?.evidence ?? ['Your available check-ins and logs']).map((item) => <span key={item}>• {item}</span>)}<small>Observation, not a cause. {disclaimer}</small></div>}
     </Card>
     <section className="section-block"><div className="section-heading"><h2>Outside right now</h2><span className="updated-label">Updated just now</span></div><Card className="aqi-card"><div><span className="card-kicker"><CloudSun size={16} aria-hidden="true" /> India CPCB estimate</span><strong className="aqi-value">72</strong><span className="aqi-status">Satisfactory</span><p>Modelled from Open-Meteo data.</p></div><div className="aqi-ring"><span>PM2.5</span><strong>28</strong><small>µg/m³</small></div></Card><div className="stat-grid"><Stat icon={Thermometer} label="Temperature" value="26°" detail="Feels like 27°" /><Stat icon={Droplets} label="Humidity" value="64%" detail="Comfortable" tone="stat-tile--teal" /></div></section>
     <section className="section-block"><div className="section-heading"><h2>What else is around</h2><button className="icon-button" aria-label="Refresh environment"><RefreshCw size={17} /></button></div><Card className="window-card"><div><span className="card-kicker">Cleanest window</span><h3>5:00–7:00 am</h3><p>Forecast estimate for the next 24 hours.</p></div><div className="mini-bars" aria-label="Air quality forecast"><i /><i /><i /><i /><i /><i /><i /><i /></div></Card></section>
@@ -39,6 +44,10 @@ export function TalkScreen() {
   const [view, setView] = useState<'feed' | 'ask'>('feed');
   const [text, setText] = useState('');
   const [saved, setSaved] = useState(false);
+  const [feel, setFeel] = useState(3);
+  const [energy, setEnergy] = useState(3);
+  const data = useActiveData();
+  const latestCheckIn = data.checkins[data.checkins.length - 1];
   return <main className="screen"><Header eyebrow="Your day, in your words" title="Talk" action={<button className="icon-button" aria-label="Talk options"><MoreHorizontal size={20} /></button>} /><div className="segmented"><button className={view === 'feed' ? 'is-active' : ''} onClick={() => setView('feed')}>Feed</button><button className={view === 'ask' ? 'is-active' : ''} onClick={() => setView('ask')}>Ask Pran</button></div>{view === 'feed' ? <><div className="filter-row"><button className="filter-chip is-active">All</button><button className="filter-chip">Mine</button><button className="filter-chip">Hub</button><button className="filter-chip">Gem</button></div><Card className="composer-card"><div className="composer-orb" aria-hidden="true" /><div><strong>Tell Pran something…</strong><p>A feeling, a log, or a small note.</p></div><button className="icon-button" aria-label="Start voice note"><Mic size={19} /></button></Card><div className="feed-list"><article className="feed-item feed-item--self"><span className="feed-icon"><Activity size={17} /></span><div><span className="feed-meta">Today · Your check-in</span><h2>Feeling calm and a little energised</h2><p>Headache · Focused</p></div><ChevronDown size={17} /></article><article className="feed-item feed-item--hub"><span className="feed-icon"><Wind size={17} /></span><div><span className="feed-meta">Yesterday · Hub observation</span><h2>Bedroom air was stuffier overnight</h2><p>Tap to see what I looked at.</p></div><ChevronDown size={17} /></article></div><div className="quick-checkin"><span>Quick check-in</span><div className="orb-row"><button aria-label="Low and drained" /><button aria-label="Calm and content" /><button aria-label="Bright and energised" /><button aria-label="Tense and wired" /></div></div></> : <Card className="ask-card"><Mascot mood="thinking" size={58} /><h2>What would you like to notice?</h2><p>Start with a suggested question. Answers will only use what your data supports.</p><div className="question-chips"><button>How did I sleep?</button><button>When is my air cleanest?</button><button>What changed today?</button></div><div className="ask-input"><input value={text} onChange={(event) => setText(event.target.value)} placeholder="Ask in your own words" /><button aria-label="Send question" onClick={() => setSaved(true)}><Send size={18} /></button></div>{saved && <p className="success-note"><Check size={15} /> I’ll compare this with your available observations.</p>}</Card>}</main>;
 }
 

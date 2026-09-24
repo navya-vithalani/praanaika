@@ -53,6 +53,10 @@ export function WelcomeScreen() {
   }
 
   function chooseMode(mode: 'demo' | 'own') {
+    if (mode === 'own') {
+      navigate('/onboarding');
+      return;
+    }
     setMode(mode);
     navigate('/today', { replace: true });
   }

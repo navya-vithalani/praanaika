@@ -3,20 +3,27 @@ import { AppShell } from './shell/AppShell';
 import { PlaceholderScreen } from './screens/PlaceholderScreen';
 import { WelcomeScreen } from './screens/WelcomeScreen';
 import { useSessionStore } from '../store/sessionStore';
-import { GemScreen, HubScreen, TalkScreen, TodayScreen, YouScreen } from './screens/TabScreens';
+import { TodayScreen, YouScreen } from './screens/TabScreens';
+import { InteractiveTalkScreen } from './screens/InteractiveTalkScreen';
+import { DesignScreen } from './screens/DesignScreen';
+import { GemRouteScreen, HubRouteScreen } from './screens/DeviceRouteScreens';
+import { OwnOnboardingScreen } from './screens/OwnOnboardingScreen';
+import { DetailedTalkScreen } from './screens/DetailedTalkScreen';
 
 export function App() {
   return (
     <Routes>
       <Route path="/welcome" element={<WelcomeScreen />} />
+      <Route path="/onboarding" element={<OwnOnboardingScreen />} />
       <Route path="/about" element={<PlaceholderScreen title="About Praanaika" eyebrow="Body, Environment, Baseline" />} />
       <Route element={<ProfileGuard />}>
         <Route element={<AppShell />}>
-          <Route path="/talk" element={<TalkScreen />} />
-          <Route path="/gem" element={<GemScreen />} />
+          <Route path="/talk" element={<DetailedTalkScreen />} />
+          <Route path="/gem" element={<GemRouteScreen />} />
           <Route path="/today" element={<TodayScreen />} />
-          <Route path="/hub" element={<HubScreen />} />
+          <Route path="/hub" element={<HubRouteScreen />} />
           <Route path="/you" element={<YouScreen />} />
+          <Route path="/design/:kind" element={<DesignScreen />} />
           <Route path="*" element={<ModeGuard />} />
         </Route>
       </Route>
