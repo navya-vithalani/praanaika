@@ -2,61 +2,68 @@ import type { CheckIn, DemoDataset, InsightCard, LogEntry } from './types';
 
 const DAY_MS = 86_400_000;
 const IST = '+05:30';
+const STREAM_LENGTH = 56 * 24;
 
-function iso(dayIndex: number, hour: number, minute = 0): string {
-  const date = new Date(Date.now() - (56 - dayIndex) * DAY_MS);
+function iso(day: number, hour: number, minute = 0): string {
+  const date = new Date(Date.now() - (56 - day) * DAY_MS);
   date.setUTCHours(hour - 5, minute - 30, 0, 0);
   return `${date.toISOString().slice(0, 19)}${IST}`;
 }
 
-function checkins(): CheckIn[] {
+function wave(index: number, period: number, amplitude: number, baseline: number): number {
+  return baseline + Math.sin(index / period) * amplitude;
+}
+
+function createCheckins(): CheckIn[] {
   return Array.from({ length: 80 }, (_, index) => {
     const day = Math.min(56, Math.floor(index * 56 / 80) + 1);
-    return {
-      id: `checkin-${index + 1}`,
-      t: iso(day, 8 + (index % 11)),
-      feel: ([3, 4, 4, 2, 5][index % 5]) as CheckIn['feel'],
-      energy: ([3, 4, 5, 2, 3][index % 5]) as CheckIn['energy'],
-      tags: index % 7 === 0 ? ['Headache'] : index % 4 === 0 ? ['Focused'] : [],
-      note: null,
-    };
+    const tags = index % 7 === 0 ? ['Headache'] : index % 4 === 0 ? ['Focused'] : index % 9 === 0 ? ['Tired'] : [];
+    return { id: `checkin-${index + 1}`, t: iso(day, 8 + (index % 11)), feel: ([3, 4, 4, 2, 5][index % 5]) as CheckIn['feel'], energy: ([3, 4, 5, 2, 3][index % 5]) as CheckIn['energy'], tags, note: null };
   });
 }
 
-function logs(): LogEntry[] {
-  return Array.from({ length: 24 }, (_, index) => ({
-    id: `log-${index + 1}`,
-    t: iso(Math.min(56, index * 2 + 1), 21),
-    category: 'sleep',
-    inputMode: 'tap',
-    rawText: null,
-    photoDiscarded: false,
-    parsed: { category: 'sleep', sleepAt: iso(Math.min(56, index * 2 + 1), 23), wakeAt: iso(Math.min(56, index * 2 + 2), 7), quality: 3 },
-    parserConfidence: 1,
-    status: 'confirmed',
-  }));
+function createLogs(): LogEntry[] {
+  const categories = ['sleep', 'food', 'exercise', 'illness', 'medication', 'cycle'] as const;
+  return Array.from({ length: 140 }, (_, index) => {
+    const day = Math.min(56, Math.floor(index * 56 / 140) + 1);
+    const category = categories[index % categories.length];
+    const parsed = category === 'sleep' ? { category, sleepAt: iso(day, 23), wakeAt: iso(day + 1, 7), quality: 3 } : category === 'medication' ? { category, name: index % 2 ? 'Paracetamol' : 'Crocin', dose: 500, unit: 'mg', takenAt: iso(day, 14), reason: 'as logged' } : category === 'food' ? { category, mealType: index % 3 === 0 ? 'dinner' : 'lunch', items: ['dal', 'roti'], carbHeavy: index % 3 === 0 } : category === 'exercise' ? { category, activity: index % 2 ? 'walk' : 'yoga', durationMin: 30, intensity: 'moderate', startAt: iso(day, 18) } : category === 'illness' ? { category, symptoms: index % 2 ? ['sore throat'] : ['fatigue'], severity: 3, onset: iso(day, 10), durationHours: 12 } : { category, phase: 'luteal', flow: null, dayOfCycle: (index % 28) + 1 };
+    return { id: `log-${index + 1}`, t: iso(day, category === 'sleep' ? 21 : 12), category, inputMode: 'tap', rawText: category === 'medication' ? 'took paracetamol 500 after lunch' : null, photoDiscarded: false, parsed, parserConfidence: index % 17 === 0 ? .42 : .86, status: index % 19 === 0 ? 'corrected' : category === 'medication' ? 'needs_confirm' : 'confirmed' };
+  });
 }
 
-function insights(): InsightCard[] {
-  return [
-    { id: 'insight-co2', dayIndex: 14, createdAt: iso(14, 8), expiresAt: iso(14, 23), sources: ['hub', 'self'], tier: 'personal', kind: 'sleep', headline: 'My bedroom air was stuffier overnight.', body: 'On nights when CO₂ rose above my usual range, my sleep notes looked lighter. They went together around those nights, not necessarily because of one another.', evidence: ['Hub CO₂ peaked above my reference range', 'Sleep notes from 3 similar nights'] },
-    { id: 'insight-voc', dayIndex: 32, createdAt: iso(32, 18), expiresAt: iso(33, 18), sources: ['gem', 'hub'], tier: 'direct', kind: 'exposure', headline: 'I noticed a short VOC rise this evening.', body: 'The Gem and Hub readings rose together near the kitchen window. I recorded the observation so you can add what else was different.', evidence: ['Gem VOC delta at 20:10', 'Hub VOC rise 20 minutes later'] },
-    { id: 'insight-checkin', dayIndex: 45, createdAt: iso(45, 14), expiresAt: iso(46, 14), sources: ['self'], tier: 'direct', kind: 'observation', headline: 'My afternoons have felt more focused lately.', body: 'Your recent check-ins were brighter between lunch and late afternoon than earlier in the demo.', evidence: ['18 afternoon check-ins', 'Focused tag appeared 5 times'] },
-    { id: 'insight-dust', dayIndex: 22, createdAt: iso(22, 20), expiresAt: iso(22, 23), sources: ['hub', 'self'], tier: 'direct', kind: 'pattern', headline: 'A dusty evening went together with a headache tag.', body: 'This happened on 4 of 6 dusty evenings, while 2 dusty evenings had no headache tag. I cannot say what caused what.', evidence: ['Hub PM2.5 above 70', '4 of 6 evenings had the tag'] },
-    { id: 'insight-abstain', dayIndex: 38, createdAt: iso(38, 10), expiresAt: iso(38, 23), sources: ['self'], tier: 'direct', kind: 'abstain', headline: 'I’m not sure yet about late dinners.', body: 'There are only a few late-dinner nights so far. I need more of your own check-ins before I can compare them fairly.', evidence: ['3 late-dinner entries', '2 next-morning check-ins'] },
-    { id: 'insight-sensor', dayIndex: 40, createdAt: iso(40, 16), expiresAt: iso(40, 23), sources: ['hub'], tier: 'direct', kind: 'sensor_issue', headline: 'I noticed a possible Hub sensor issue.', body: 'The VOC reading stayed almost flat for about 6 hours. I am marking it as a sensor issue, not a change in you.', evidence: ['VOC stream flat-lined for 6 hours'] },
-  ];
+function createStreams() {
+  const gem = { start: iso(1, 0), intervalMinutes: 60 as const, length: STREAM_LENGTH, columns: { voc_out: [] as number[], voc_skin: [] as number[], voc_delta: [] as number[], nox_out: [] as number[], skin_temp_c: [] as number[], skin_rh: [] as number[], uv_index: [] as number[], noise_db: [] as number[], hr_bpm: [] as number[], hrv_ms: [] as number[], spo2_pct: [] as number[], motion: [] as number[], worn: [] as number[], attachment: [] as string[] } };
+  const hub = { start: iso(1, 0), intervalMinutes: 60 as const, length: STREAM_LENGTH, columns: { temp_c: [] as number[], rh_pct: [] as number[], voc_index: [] as number[], nox_index: [] as number[], light_lux: [] as number[], pm25: [] as number[], co2_ppm: [] as number[], noise_db: [] as number[], pressure_hpa: [] as number[] } };
+  for (let index = 0; index < STREAM_LENGTH; index += 1) {
+    const day = Math.floor(index / 24) + 1;
+    const hour = index % 24;
+    const stuffy = [9, 14, 21, 27, 32, 38, 44, 51].includes(day) && hour >= 1 && hour <= 5;
+    const dusty = [12, 22, 31, 42, 49, 54].includes(day) && hour >= 18 && hour <= 20;
+    const cooking = hour === 8 || hour === 19;
+    const construction = day >= 35 && day <= 42 && hour >= 9 && hour <= 13;
+    const unworn = hour < 6 || index % 19 === 0;
+    hub.columns.temp_c.push(Number(wave(index, 18, 2.2, 24.5).toFixed(1))); hub.columns.rh_pct.push(Number(wave(index, 22, 8, 58).toFixed(1))); hub.columns.voc_index.push(cooking ? 90 : 35 + (index % 7)); hub.columns.nox_index.push(18 + (index % 5)); hub.columns.light_lux.push(hour > 7 && hour < 20 ? 180 + hour * 12 : 4); hub.columns.pm25.push(dusty ? 76 : 18 + (index % 9)); hub.columns.co2_ppm.push(stuffy ? 1380 + (index % 80) : 650 + (index % 90)); hub.columns.noise_db.push(construction ? 70 : 38 + (index % 9)); hub.columns.pressure_hpa.push(Number(wave(index, 31, 4, 1008).toFixed(1)));
+    gem.columns.voc_out.push(20 + (index % 8)); gem.columns.voc_skin.push(unworn ? 0 : 28 + (index % 7)); gem.columns.voc_delta.push(unworn ? 0 : cooking ? 64 : 8 + (index % 9)); gem.columns.nox_out.push(10 + (index % 5)); gem.columns.skin_temp_c.push(unworn ? 0 : Number(wave(index, 40, .3, 36.2).toFixed(2))); gem.columns.skin_rh.push(unworn ? 0 : 52 + (index % 10)); gem.columns.uv_index.push(hour > 6 && hour < 18 ? 3 : 0); gem.columns.noise_db.push(40 + (index % 12)); gem.columns.hr_bpm.push(unworn ? 0 : 70 + (index % 6)); gem.columns.hrv_ms.push(unworn ? 0 : 48 + (index % 8)); gem.columns.spo2_pct.push(unworn ? 0 : 98); gem.columns.motion.push(unworn ? 0 : index % 4); gem.columns.worn.push(unworn ? 0 : 1); gem.columns.attachment.push(unworn ? 'none' : hour >= 18 ? 'ear' : 'collar');
+  }
+  return { gem, hub };
+}
+
+function createInsights(): InsightCard[] {
+  const cards = [
+    ['co2', 9, ['hub', 'self'], 'personal', 'sleep', 'My bedroom air was stuffier overnight.', 'On nights when CO₂ rose above my usual range, my sleep notes looked lighter. They went together around those nights, not necessarily because of one another.', ['Hub CO₂ stayed above 1,300 ppm for 4 hours', 'Sleep notes from 8 stuffy nights']],
+    ['dust', 22, ['hub', 'self'], 'direct', 'pattern', 'A dusty evening went together with a headache tag.', 'This happened on 4 of 6 dusty evenings, while 2 dusty evenings had no headache tag. I cannot say what caused what.', ['Hub PM2.5 above 70', '4 of 6 evenings had the tag']],
+    ['voc', 32, ['gem', 'hub'], 'direct', 'exposure', 'I noticed a short VOC rise this evening.', 'The Gem and Hub readings rose together near the kitchen window. I recorded the observation so you can add what else was different.', ['Gem VOC delta at 20:00', 'Hub VOC rose within 20 minutes']],
+    ['abstain', 38, ['self'], 'direct', 'abstain', 'I’m not sure yet about late dinners.', 'There are only a few late-dinner nights so far. I need more of your own check-ins before I can compare them fairly.', ['3 late-dinner entries', '2 next-morning check-ins']],
+    ['sensor', 40, ['hub'], 'direct', 'sensor_issue', 'I noticed a possible Hub sensor issue.', 'The VOC reading stayed almost flat for about 6 hours. I am marking it as a sensor issue, not a change in you.', ['VOC stream flat-lined for 6 hours']],
+    ['noise', 43, ['hub', 'self'], 'personal', 'My afternoons were noisier than usual.', 'A construction stretch coincided with lower afternoon check-ins. I cannot say why they went together.', ['Hub noise averaged 70 dB', '12 afternoon check-ins']],
+  ] as const;
+  return cards.map(([id, day, sources, tier, kind, headline, body, evidence]) => ({ id: `insight-${id}`, dayIndex: day, createdAt: iso(day, 20), expiresAt: iso(day + 1, 20), sources: [...sources], tier, kind, headline, body, evidence })) as InsightCard[];
 }
 
 export function createDemoDataset(): DemoDataset {
-  const demoCheckins = checkins();
-  return {
-    meta: { personaName: 'Meera', startDate: iso(1, 0).slice(0, 10), endDate: iso(56, 0).slice(0, 10), days: 56, intervalMinutes: 60, timezone: 'Asia/Kolkata', isSynthetic: true, generatorVersion: 'step-3-seed-1', note: 'Synthetic demo data. Shows how the method works, not results from real people.' },
-    profile: { id: 'demo-meera', isDemo: true, displayName: 'Meera', avatarKey: 'avatar-01', age: 29, sex: 'female', heightCm: null, weightKg: null, ethnicity: null, sensitivities: [], city: 'Bengaluru', pincode: null, lat: 12.9716, lon: 77.5946, wearers: [{ id: 'meera', name: 'Meera', kind: 'person', avatarKey: 'avatar-01' }], gem: null, hub: null, consents: { airExposure: true, bodySignals: false, healthLogs: false, voiceMemos: false, photoFood: false, pioneerResearch: false, acknowledged18Plus: true, acceptedPolicyVersion: '0.1-demo', timestamp: null }, pioneer: false, createdAt: iso(1, 8) },
-    gem: { start: iso(1, 0), intervalMinutes: 60, length: 1344, columns: { voc_out: [], voc_skin: [], voc_delta: [], nox_out: [], skin_temp_c: [], skin_rh: [], uv_index: [], noise_db: [], hr_bpm: [], hrv_ms: [], spo2_pct: [], motion: [], worn: [], attachment: [] } },
-    hub: { start: iso(1, 0), intervalMinutes: 60, length: 1344, columns: { temp_c: [], rh_pct: [], voc_index: [], nox_index: [], light_lux: [], pm25: [], co2_ppm: [], noise_db: [], pressure_hpa: [] } },
-    nights: [], checkins: demoCheckins, logs: logs(), sessions: [], spikes: [], recalibrations: [], insights: insights(), talkAnswers: [],
-  };
+  const { gem, hub } = createStreams();
+  return { meta: { personaName: 'Meera', startDate: iso(1, 0).slice(0, 10), endDate: iso(56, 0).slice(0, 10), days: 56, intervalMinutes: 60, timezone: 'Asia/Kolkata', isSynthetic: true, generatorVersion: 'step-3-seed-2', note: 'Synthetic demo data. Shows how the method works, not results from real people.' }, profile: { id: 'demo-meera', isDemo: true, displayName: 'Meera', avatarKey: 'avatar-01', age: 29, sex: 'female', city: 'Bengaluru', lat: 12.9716, lon: 77.5946 }, gem, hub, nights: Array.from({ length: 56 }, (_, index) => ({ date: iso(index + 1, 0).slice(0, 10), minutesAsleep: 390 + (index % 8) * 12, sleepEfficiencyPct: [78, 80, 88, 90][index % 4] })), checkins: createCheckins(), logs: createLogs(), sessions: Array.from({ length: 20 }, (_, index) => ({ id: `session-${index + 1}`, name: index % 2 ? 'Evening at home' : 'Morning commute', attachment: index % 2 ? 'collar' : 'ear', spikeIds: [`spike-${index + 1}`] })), spikes: Array.from({ length: 25 }, (_, index) => ({ id: `spike-${index + 1}`, t: iso((index % 56) + 1, 8 + (index % 12)), durationMin: 8 + (index % 15), peakVocDelta: 42 + (index % 30), tag: index % 3 ? 'Cooking' : 'Incense or smoke' })), recalibrations: Array.from({ length: 8 }, (_, index) => ({ id: `recalibration-${index + 1}`, t: iso(7 * (index + 1), 10), socket: (index % 4) + 1, confirmedByHallSensor: index !== 5 })), insights: createInsights(), talkAnswers: [{ id: 'sleep-stuffy', question: 'How did I sleep on stuffy nights?', answerText: 'My sleep efficiency was lower on the stuffy nights in this synthetic demo. That is an observation, not a cause.', abstain: false }, { id: 'unknown', question: 'Unknown question', answerText: 'I’m not sure yet, and here is what is missing.', abstain: true }] };
 }
 
 export const demoDataset = createDemoDataset();

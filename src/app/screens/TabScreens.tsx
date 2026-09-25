@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
 import { Activity, ArrowUpRight, BatteryMedium, Check, ChevronDown, CircleHelp, CloudSun, Droplets, Gauge, Gem, Lightbulb, MapPin, Mic, MoreHorizontal, Moon, RefreshCw, Send, Settings2, ShieldCheck, Sparkles, Thermometer, Volume2, Wind, X } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
@@ -7,6 +7,7 @@ import { Button } from '../../components/ui/Button';
 import { Mascot } from '../../components/mascot/Mascot';
 import { useSessionStore } from '../../store/sessionStore';
 import { useActiveData } from '../../data/hooks/useActiveData';
+import { fetchEnvironment, type EnvironmentSnapshot } from '../../services/airQuality';
 
 const disclaimer = 'Praanaika shares observations about your own patterns. It is not medical advice or a diagnosis. Your doctor makes every decision.';
 
@@ -25,7 +26,24 @@ export function TodayScreen() {
   const navigate = useNavigate();
   const [location, setLocation] = useState('Bengaluru');
   const [expanded, setExpanded] = useState(false);
+  const [environment, setEnvironment] = useState<EnvironmentSnapshot | null>(null);
+  const [environmentLoading, setEnvironmentLoading] = useState(true);
+  const [environmentError, setEnvironmentError] = useState(false);
+  const [environmentRefresh, setEnvironmentRefresh] = useState(0);
   const insight = data.insights[0];
+  useEffect(() => {
+    let active = true;
+    setEnvironmentLoading(true);
+    setEnvironmentError(false);
+    void fetchEnvironment(location).then((snapshot) => {
+      if (active) setEnvironment(snapshot);
+    }).catch(() => {
+      if (active) setEnvironmentError(true);
+    }).finally(() => {
+      if (active) setEnvironmentLoading(false);
+    });
+    return () => { active = false; };
+  }, [location, environmentRefresh]);
   return <main className="screen">
     <Header eyebrow={mode === 'demo' ? 'Good evening, Meera' : 'Your day, gently noticed'} title="Today" action={<button className="location-chip" onClick={() => setLocation(location === 'Bengaluru' ? 'Choose city' : 'Bengaluru')}><MapPin size={15} aria-hidden="true" />{location}</button>} />
     <Card className={`insight-panel insight-panel--${insight?.tier ?? 'direct'} insight-sources--${insight?.sources.join('-') ?? 'self'}`}>
@@ -33,8 +51,8 @@ export function TodayScreen() {
       <div className="insight-panel__body"><Mascot mood="happy" size={76} /><div><h2>{insight?.headline ?? 'I do not know your rhythm yet.'}</h2><p>{insight?.body ?? 'Share a check-in and I will start learning your own baseline.'}</p></div></div>
       {insight?.tier === 'personal' && <span className="personal-badge">Just for you</span>}<button className="panel-link" onClick={() => setExpanded(!expanded)}>Why I’m saying this <ArrowUpRight size={15} aria-hidden="true" /></button>{expanded && <div className="insight-evidence"><strong>Here’s what I looked at:</strong>{(insight?.evidence ?? ['Your available check-ins and logs']).map((item) => <span key={item}>• {item}</span>)}<small>Observation, not a cause. {disclaimer}</small></div>}
     </Card>
-    <section className="section-block"><div className="section-heading"><h2>Outside right now</h2><span className="updated-label">Updated just now</span></div><Card className="aqi-card"><div><span className="card-kicker"><CloudSun size={16} aria-hidden="true" /> India CPCB estimate</span><strong className="aqi-value">72</strong><span className="aqi-status">Satisfactory</span><p>Modelled from Open-Meteo data.</p></div><div className="aqi-ring"><span>PM2.5</span><strong>28</strong><small>µg/m³</small></div></Card><div className="stat-grid"><Stat icon={Thermometer} label="Temperature" value="26°" detail="Feels like 27°" /><Stat icon={Droplets} label="Humidity" value="64%" detail="Comfortable" tone="stat-tile--teal" /></div></section>
-    <section className="section-block"><div className="section-heading"><h2>What else is around</h2><button className="icon-button" aria-label="Refresh environment"><RefreshCw size={17} /></button></div><Card className="window-card"><div><span className="card-kicker">Cleanest window</span><h3>5:00–7:00 am</h3><p>Forecast estimate for the next 24 hours.</p></div><div className="mini-bars" aria-label="Air quality forecast"><i /><i /><i /><i /><i /><i /><i /><i /></div></Card></section>
+    <section className="section-block"><div className="section-heading"><h2>Outside right now</h2><span className="updated-label">{environmentLoading ? 'Updating…' : environment?.offline ? 'Cached · offline' : 'Updated just now'}</span></div><Card className="aqi-card"><div><span className="card-kicker"><CloudSun size={16} aria-hidden="true" /> India CPCB estimate</span><strong className="aqi-value">{environment?.aqi ?? '—'}</strong><span className="aqi-status">{environment?.band ?? (environmentError ? 'Unavailable' : 'Loading')}</span><p>{environmentError ? 'Try refreshing or another city.' : 'Modelled from Open-Meteo data.'}</p></div><div className="aqi-ring"><span>PM2.5</span><strong>{environment?.pm25 ? Math.round(environment.pm25) : '—'}</strong><small>µg/m³</small></div></Card><div className="stat-grid"><Stat icon={Thermometer} label="Temperature" value={environment?.temperature === null || environment?.temperature === undefined ? '—' : `${Math.round(environment.temperature)}°`} detail={environment?.apparentTemperature === null || environment?.apparentTemperature === undefined ? 'Waiting for data' : `Feels like ${Math.round(environment.apparentTemperature)}°`} /><Stat icon={Droplets} label="Humidity" value={environment?.humidity === null || environment?.humidity === undefined ? '—' : `${Math.round(environment.humidity)}%`} detail={environment?.offline ? 'Cached reading' : 'Current reading'} tone="stat-tile--teal" /></div></section>
+    <section className="section-block"><div className="section-heading"><h2>What else is around</h2><button className="icon-button" aria-label="Refresh environment" onClick={() => setEnvironmentRefresh((value) => value + 1)}><RefreshCw size={17} /></button></div><Card className="window-card"><div><span className="card-kicker">Cleanest window</span><h3>{environment?.cleanestWindow ?? 'Calculating…'}</h3><p>Forecast estimate for the next 24 hours.</p></div><div className="mini-bars" aria-label="Air quality forecast"><i /><i /><i /><i /><i /><i /><i /><i /></div></Card></section>
     <section className="section-block"><div className="section-heading"><h2>Keep exploring</h2></div><div className="action-grid"><button className="action-tile" onClick={() => navigate('/talk')}><Mic size={20} /><strong>Tell Pran something</strong><small>Add a check-in or log.</small></button><button className="action-tile" onClick={() => navigate('/about')}><CircleHelp size={20} /><strong>How this works</strong><small>Body, environment, baseline.</small></button></div></section>
     <p className="disclaimer-line"><ShieldCheck size={15} aria-hidden="true" /> {disclaimer}</p>
   </main>;

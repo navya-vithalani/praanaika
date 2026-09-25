@@ -9,7 +9,7 @@ export interface CheckIn { id: string; t: ISODateTime; feel: 1 | 2 | 3 | 4 | 5; 
 export type LogCategory = 'illness' | 'medication' | 'sleep' | 'exercise' | 'food' | 'cycle';
 export type LogStatus = 'needs_confirm' | 'confirmed' | 'corrected' | 'flagged_wrong';
 export type ParsedPayload = { category: LogCategory; [key: string]: unknown };
-export interface LogEntry { id: string; t: ISODateTime; category: LogCategory; inputMode: 'text' | 'voice' | 'photo' | 'tap' | 'passive'; rawText: string | null; photoDiscarded: boolean; parsed: ParsedPayload; parserConfidence: number; status: LogStatus; }
+export interface LogEntry { id: string; t: ISODateTime; category: LogCategory; inputMode: 'text' | 'voice' | 'photo' | 'tap' | 'passive'; rawText: string | null; photoDiscarded: boolean; parsed: ParsedPayload; parserConfidence: number; status: LogStatus; correction?: { fixed: ParsedPayload; note: string | null; at: ISODateTime }; }
 
 export interface InsightCard {
   id: string;
