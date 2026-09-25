@@ -6,6 +6,7 @@ import { Card } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { Mascot } from '../../components/mascot/Mascot';
 import { useSessionStore } from '../../store/sessionStore';
+import { useOwnDataStore } from '../../store/ownDataStore';
 import { useActiveData } from '../../data/hooks/useActiveData';
 import { fetchEnvironment, type EnvironmentSnapshot } from '../../services/airQuality';
 
@@ -19,21 +20,42 @@ function Stat({ icon: Icon, label, value, detail, tone = '' }: { icon: typeof Wi
   return <div className={`stat-tile ${tone}`}><Icon size={19} aria-hidden="true" /><span>{label}</span><strong>{value}</strong><small>{detail}</small></div>;
 }
 
+function InsightCardView({ insight, dayLabel, disclaimerText }: { insight: any; dayLabel: string; disclaimerText: string }) {
+  const [expanded, setExpanded] = useState(false);
+  return (
+    <Card className={`insight-panel insight-panel--${insight?.tier ?? 'direct'} insight-sources--${insight?.sources?.join('-') ?? 'self'}`} style={{ marginBottom: '16px' }}>
+      <div className="insight-panel__top"><span className="source-label"><Sparkles size={15} aria-hidden="true" /> Pran says</span><span className="chip">{dayLabel}</span></div>
+      <div className="insight-panel__body"><Mascot mood="happy" size={76} /><div><h2>{insight?.headline ?? 'I do not know your rhythm yet.'}</h2><p>{insight?.body ?? 'Share a check-in and I will start learning your own baseline.'}</p></div></div>
+      {insight?.tier === 'personal' && <span className="personal-badge">Just for you</span>}<button className="panel-link" onClick={() => setExpanded(!expanded)}>Why I’m saying this <ArrowUpRight size={15} aria-hidden="true" /></button>{expanded && <div className="insight-evidence"><strong>Here’s what I looked at:</strong>{(insight?.evidence ?? ['Your available check-ins and logs']).map((item: string) => <span key={item}>• {item}</span>)}<small>Observation, not a cause. {disclaimerText}</small></div>}
+    </Card>
+  );
+}
+
 export function TodayScreen() {
   const mode = useSessionStore((state) => state.mode);
   const demoDay = useSessionStore((state) => state.demoDay);
   const data = useActiveData();
   const navigate = useNavigate();
+  const addCheckIn = useOwnDataStore((state) => state.addCheckIn);
   const profile = data.profile as { displayName?: string; name?: string; city?: string } | null;
   const profileName = profile?.displayName ?? profile?.name ?? 'you';
   const profileCity = profile?.city ?? 'Choose city';
   const [location, setLocation] = useState(profileCity);
-  const [expanded, setExpanded] = useState(false);
   const [environment, setEnvironment] = useState<EnvironmentSnapshot | null>(null);
   const [environmentLoading, setEnvironmentLoading] = useState(true);
   const [environmentError, setEnvironmentError] = useState(false);
   const [environmentRefresh, setEnvironmentRefresh] = useState(0);
-  const insight = data.insights[0];
+
+  const [feel, setFeel] = useState(3);
+  const [energy, setEnergy] = useState(3);
+  const [saved, setSaved] = useState(false);
+
+  function saveCheckIn() {
+    if (mode === 'own') addCheckIn({ id: `checkin-${Date.now()}`, t: new Date().toISOString(), feel: feel as any, energy: energy as any, tags: [], note: null });
+    setSaved(true);
+    setTimeout(() => setSaved(false), 2500);
+  }
+
   useEffect(() => {
     let active = true;
     setEnvironmentLoading(true);
@@ -47,16 +69,23 @@ export function TodayScreen() {
     });
     return () => { active = false; };
   }, [location, environmentRefresh]);
+
+  const stdInsight = { id: 'std', tier: 'direct', sources: ['self'], headline: 'I do not know your rhythm yet.', body: 'Share a check-in and I will start learning your own baseline.', evidence: ['Your available check-ins and logs'] };
+  const insightsToShow = mode === 'demo' ? [...data.insights, stdInsight] : [stdInsight];
+  const dayLabel = `Day ${mode === 'demo' ? demoDay : data.checkins.length ? '1' : '0'}`;
+
   return <main className="screen">
     <Header eyebrow={mode === 'demo' ? 'Good evening, Meera' : `Good evening, ${profileName}`} title="Today" action={<button className="location-chip" onClick={() => setLocation(location === profileCity ? 'Choose city' : profileCity)}><MapPin size={15} aria-hidden="true" />{location}</button>} />
-    <Card className={`insight-panel insight-panel--${insight?.tier ?? 'direct'} insight-sources--${insight?.sources.join('-') ?? 'self'}`}>
-      <div className="insight-panel__top"><span className="source-label"><Sparkles size={15} aria-hidden="true" /> Pran says</span><span className="chip">Day {mode === 'demo' ? demoDay : data.checkins.length ? '1' : '0'}</span></div>
-      <div className="insight-panel__body"><Mascot mood="happy" size={76} /><div><h2>{insight?.headline ?? 'I do not know your rhythm yet.'}</h2><p>{insight?.body ?? 'Share a check-in and I will start learning your own baseline.'}</p></div></div>
-      {insight?.tier === 'personal' && <span className="personal-badge">Just for you</span>}<button className="panel-link" onClick={() => setExpanded(!expanded)}>Why I’m saying this <ArrowUpRight size={15} aria-hidden="true" /></button>{expanded && <div className="insight-evidence"><strong>Here’s what I looked at:</strong>{(insight?.evidence ?? ['Your available check-ins and logs']).map((item) => <span key={item}>• {item}</span>)}<small>Observation, not a cause. {disclaimer}</small></div>}
-    </Card>
+    {insightsToShow.map(insight => <InsightCardView key={insight.id} insight={insight} dayLabel={dayLabel} disclaimerText={disclaimer} />)}
+    
     <section className="section-block"><div className="section-heading"><h2>Outside right now</h2><span className="updated-label">{environmentLoading ? 'Updating…' : environment?.offline ? 'Cached · offline' : 'Updated just now'}</span></div><Card className="aqi-card"><div><span className="card-kicker"><CloudSun size={16} aria-hidden="true" /> India CPCB estimate</span><strong className="aqi-value">{environment?.aqi ?? '—'}</strong><span className="aqi-status">{environment?.band ?? (environmentError ? 'Unavailable' : 'Loading')}</span><p>{environmentError ? 'Try refreshing or another city.' : 'Modelled from Open-Meteo data.'}</p></div><div className="aqi-ring"><span>PM2.5</span><strong>{environment?.pm25 ? Math.round(environment.pm25) : '—'}</strong><small>µg/m³</small></div></Card><div className="stat-grid"><Stat icon={Thermometer} label="Temperature" value={environment?.temperature === null || environment?.temperature === undefined ? '—' : `${Math.round(environment.temperature)}°`} detail={environment?.apparentTemperature === null || environment?.apparentTemperature === undefined ? 'Waiting for data' : `Feels like ${Math.round(environment.apparentTemperature)}°`} /><Stat icon={Droplets} label="Humidity" value={environment?.humidity === null || environment?.humidity === undefined ? '—' : `${Math.round(environment.humidity)}%`} detail={environment?.offline ? 'Cached reading' : 'Current reading'} tone="stat-tile--teal" /></div></section>
     <section className="section-block"><div className="section-heading"><h2>What else is around</h2><button className="icon-button" aria-label="Refresh environment" onClick={() => setEnvironmentRefresh((value) => value + 1)}><RefreshCw size={17} /></button></div><Card className="window-card"><div><span className="card-kicker">Cleanest window</span><h3>{environment?.cleanestWindow ?? 'Calculating…'}</h3><p>Forecast estimate for the next 24 hours.</p></div><div className="mini-bars" aria-label="Air quality forecast"><i /><i /><i /><i /><i /><i /><i /><i /></div></Card></section>
-    <section className="section-block"><div className="section-heading"><h2>Keep exploring</h2></div><div className="action-grid"><button className="action-tile" onClick={() => navigate('/talk')}><Mic size={20} /><strong>Tell Pran something</strong><small>Add a check-in or log.</small></button><button className="action-tile" onClick={() => navigate('/wrapped')}><Sparkles size={20} /><strong>Your week in air</strong><small>Open Wrapped.</small></button><button className="action-tile" onClick={() => navigate('/about')}><CircleHelp size={20} /><strong>How this works</strong><small>Body, environment, baseline.</small></button></div></section>
+    
+    <section className="orb-pad"><div className="section-heading"><div><span className="card-kicker"><Sparkles size={15} /> Quick check-in</span><h2>How do you feel right now?</h2></div><span className="chip chip--light">{feel}, {energy}</span></div><div className="orb-grid">{[5, 4, 3, 2, 1].map((feelValue) => <div className="orb-grid__row" key={feelValue}>{[1, 2, 3, 4, 5].map((energyValue) => <button key={energyValue} className={feel === feelValue && energy === energyValue ? 'is-selected' : ''} aria-label={`Feel ${feelValue}, energy ${energyValue}`} onClick={() => { setFeel(feelValue); setEnergy(energyValue); }}><span /></button>)}</div>)}</div><button className="button full-button" onClick={saveCheckIn}>{saved ? 'Saved' : 'Save check-in'}</button></section>
+
+    {mode === 'demo' ? <section className="section-block"><div className="section-heading"><h2>Your week in air</h2></div><Button className="full-button" onClick={() => navigate('/wrapped')}>Open Wrapped</Button></section> : <Card className="hero-card" style={{ marginTop: '16px' }}><div className="hero-card__content"><div><h2>Wrapped is brewing</h2><p style={{ color: 'var(--color-surface)' }}>Preparing a wrapped for you... will be available soon once more data is collected.</p></div></div></Card>}
+
+    <section className="section-block"><div className="section-heading"><h2>Keep exploring</h2></div><div className="action-grid"><button className="action-tile" onClick={() => navigate('/about')}><CircleHelp size={20} /><strong>About</strong><small>How this works</small></button><button className="action-tile" onClick={() => {}}><ShieldCheck size={20} /><strong>Contact Us</strong><small>Reach out</small></button><button className="action-tile" onClick={() => {}}><Lightbulb size={20} /><strong>Feedback</strong><small>Share thoughts</small></button></div></section>
     <p className="disclaimer-line"><ShieldCheck size={15} aria-hidden="true" /> {disclaimer}</p>
   </main>;
 }
@@ -97,5 +126,15 @@ export function YouScreen() {
   const initial = name.charAt(0).toUpperCase() || 'Y';
   const [open, setOpen] = useState('privacy');
   function startOver() { resetProfile(); navigate('/welcome', { replace: true }); }
-  return <main className="screen"><Header eyebrow="Your profile and privacy" title="You" action={<button className="icon-button" aria-label="Profile settings"><Settings2 size={19} /></button>} /><Card className="profile-card"><div className="avatar-placeholder">{initial}</div><div><span className="card-kicker">{isDemo ? 'Demo profile · synthetic' : 'Private profile'}</span><h2>{name}{age ? `, ${age}` : ''}</h2><p>{city} · learning your baseline</p></div><button className="icon-button" aria-label="Edit profile"><ArrowUpRight size={17} /></button></Card>{isDemo && <Card className="hero-card" style={{ marginTop: '16px' }}><div className="hero-card__content"><div><h2>Doctor Summary</h2><p style={{ color: 'var(--color-surface)' }}>Based on synthetic data, Meera's sleep correlates with stuffy air. Recommend ensuring good ventilation.</p></div></div></Card>}<section className="settings-list"><button className="settings-row" onClick={() => setOpen(open === 'privacy' ? '' : 'privacy')}><ShieldCheck size={19} /><span><strong>Your data stays here</strong><small>On this device until you delete it.</small></span><ChevronDown className={open === 'privacy' ? 'rotate' : ''} size={18} /></button>{open === 'privacy' && <div className="settings-detail"><p>Export a backup or remove everything saved by Praanaika.</p><button className="text-button">Export my data</button><button className="text-button text-button--danger">Delete my data</button></div>}<button className="settings-row" onClick={() => setOpen(open === 'about' ? '' : 'about')}><CircleHelp size={19} /><span><strong>About Praanaika</strong><small>How the method works and what it does not claim.</small></span><ChevronDown className={open === 'about' ? 'rotate' : ''} size={18} /></button>{open === 'about' && <div className="settings-detail"><p>Body, Environment, Baseline. Honest observations, never a diagnosis.</p><button className="text-button" onClick={() => navigate('/about')}>Read the story</button></div>}<button className="settings-row" onClick={startOver}><RefreshCw size={19} /><span><strong>Start over from Welcome</strong><small>Switch profile or restart this demo.</small></span><ArrowUpRight size={18} /></button></section><p className="disclaimer-line"><ShieldCheck size={15} aria-hidden="true" /> Your doctor makes every medical decision.</p></main>;
+  function downloadSummary() {
+    const content = `# Comprehensive Medical Summary for Meera\n\nPatient Name: Meera\nAge: 28\nLocation: Bengaluru\n\n## Overview\nThis summary provides a detailed synthesis of the environmental and personal health data collected over the past 60 days. The data points towards a consistent correlation between poor indoor air quality, specifically high CO2 and PM2.5 levels, and the patient's reported symptoms of fatigue, mild headaches, and poor sleep quality.\n\n## Environmental Observations\nDuring the observation period, the Hub device recorded multiple instances of CO2 levels exceeding 1500 ppm in the bedroom environment during nighttime (11:00 PM - 6:00 AM). These spikes frequently coincided with nights where the windows were closed due to elevated outdoor PM2.5 levels (often >80 µg/m³). VOC levels remained relatively stable, with minor fluctuations during cooking hours.\n\n## Health Correlates\nThe patient's self-reported check-ins indicate a strong temporal relationship with the aforementioned environmental factors. On mornings following high CO2 exposure, the patient consistently logged 'low energy' and 'brain fog'. Conversely, on nights when the room temperature was maintained below 23°C and CO2 levels were below 800 ppm, sleep efficiency was self-reported as 'excellent'.\n\n## Recommendations\n1. Ventilation Strategy: It is highly recommended to implement a cross-ventilation strategy during the 'cleanest window' of the day, typically between 2:00 PM and 4:00 PM, to reduce indoor CO2 accumulation.\n2. Air Filtration: Consider utilizing a HEPA air purifier with an active carbon filter during high PM2.5 days to allow for safe indoor air circulation without bringing in outdoor pollutants.\n3. Sleep Hygiene: Maintain the bedroom temperature at approximately 20-22°C to support optimal sleep architecture.\n4. Symptom Tracking: Continue logging instances of morning headaches to determine if the ventilation strategy mitigates these occurrences.\n\n## Conclusion\nThe data strongly suggests that the patient's acute symptoms are environmentally modulated rather than indicative of an underlying systemic pathology. Improving the nocturnal indoor air quality should be the primary intervention. Follow-up in 30 days to assess the efficacy of these environmental adjustments.`;
+    const blob = new Blob([content], { type: 'text/markdown' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'Meera_Medical_Summary.md';
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+  return <main className="screen"><Header eyebrow="Your profile and privacy" title="You" action={<button className="icon-button" aria-label="Profile settings"><Settings2 size={19} /></button>} /><Card className="profile-card"><div className="avatar-placeholder">{initial}</div><div><span className="card-kicker">{isDemo ? 'Demo profile · synthetic' : 'Private profile'}</span><h2>{name}{age ? `, ${age}` : ''}</h2><p>{city} · learning your baseline</p></div><button className="icon-button" aria-label="Edit profile"><ArrowUpRight size={17} /></button></Card>{isDemo && <Card className="hero-card" style={{ marginTop: '16px' }}><div className="hero-card__content"><div><h2>Doctor Summary</h2><p style={{ color: 'var(--color-surface)', marginBottom: '12px' }}>Based on synthetic data, Meera's sleep correlates with stuffy air. Recommend ensuring good ventilation.</p><Button onClick={downloadSummary} className="full-button" style={{ background: 'var(--color-on-primary)', color: 'var(--color-primary)' }}>Download full report (.md)</Button></div></div></Card>}<section className="settings-list"><button className="settings-row" onClick={() => setOpen(open === 'privacy' ? '' : 'privacy')}><ShieldCheck size={19} /><span><strong>Your data stays here</strong><small>On this device until you delete it.</small></span><ChevronDown className={open === 'privacy' ? 'rotate' : ''} size={18} /></button>{open === 'privacy' && <div className="settings-detail"><p>Export a backup or remove everything saved by Praanaika.</p><button className="text-button">Export my data</button><button className="text-button text-button--danger">Delete my data</button></div>}<button className="settings-row" onClick={() => setOpen(open === 'about' ? '' : 'about')}><CircleHelp size={19} /><span><strong>About Praanaika</strong><small>How the method works and what it does not claim.</small></span><ChevronDown className={open === 'about' ? 'rotate' : ''} size={18} /></button>{open === 'about' && <div className="settings-detail"><p>Body, Environment, Baseline. Honest observations, never a diagnosis.</p><button className="text-button" onClick={() => navigate('/about')}>Read the story</button></div>}<button className="settings-row" onClick={startOver}><RefreshCw size={19} /><span><strong>Start over from Welcome</strong><small>Switch profile or restart this demo.</small></span><ArrowUpRight size={18} /></button></section><p className="disclaimer-line"><ShieldCheck size={15} aria-hidden="true" /> Your doctor makes every medical decision.</p></main>;
 }

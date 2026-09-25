@@ -5,14 +5,9 @@ interface BrandMarkProps {
 
 export function BrandMark({ compact = false, onDark = false }: BrandMarkProps) {
   return (
-    <div className={`brand-mark${onDark ? ' brand-mark--dark' : ''}`} aria-label="Praanaika">
-      <svg className="brand-mark__symbol" viewBox="0 0 48 48" role="img" aria-hidden="true">
-        <circle cx="24" cy="24" r="18" fill="none" stroke="currentColor" strokeWidth="2" />
-        <path d="M24 9c-5 7-10 10-10 16a10 10 0 0 0 20 0c0-6-5-9-10-16Z" fill="currentColor" opacity=".88" />
-        <circle cx="20" cy="25" r="1.5" fill="var(--color-on-primary)" />
-        <circle cx="28" cy="25" r="1.5" fill="var(--color-on-primary)" />
-      </svg>
-      {!compact && <span className="brand-mark__word">Praanaika</span>}
+    <div className={`brand-mark${onDark ? ' brand-mark--dark' : ''}`} aria-label="Praanaika" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+      <img src="/logomark.svg" alt="Logo Mark" className="brand-mark__symbol" style={{ width: '36px', height: '36px', display: 'block' }} onError={(e) => (e.currentTarget.src = '/logomark.png')} />
+      {!compact && <img src="/logo-wordmark.svg" alt="Praanaika" className="brand-mark__word" style={{ height: '24px', display: 'block' }} onError={(e) => (e.currentTarget.src = '/logo-wordmark.png')} />}
     </div>
   );
 }
