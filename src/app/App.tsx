@@ -9,13 +9,16 @@ import { DesignScreen } from './screens/DesignScreen';
 import { GemRouteScreen, HubRouteScreen } from './screens/DeviceRouteScreens';
 import { OwnOnboardingScreen } from './screens/OwnOnboardingScreen';
 import { DetailedTalkScreen } from './screens/DetailedTalkScreen';
+import { WrappedScreen } from './screens/WrappedScreen';
+import { AboutScreen } from './screens/AboutScreen';
+import { OrderScreen } from './screens/OrderScreen';
 
 export function App() {
   return (
     <Routes>
       <Route path="/welcome" element={<WelcomeScreen />} />
       <Route path="/onboarding" element={<OwnOnboardingScreen />} />
-      <Route path="/about" element={<PlaceholderScreen title="About Praanaika" eyebrow="Body, Environment, Baseline" />} />
+      <Route path="/about" element={<AboutScreen />} />
       <Route element={<ProfileGuard />}>
         <Route element={<AppShell />}>
           <Route path="/talk" element={<DetailedTalkScreen />} />
@@ -24,6 +27,8 @@ export function App() {
           <Route path="/hub" element={<HubRouteScreen />} />
           <Route path="/you" element={<YouScreen />} />
           <Route path="/design/:kind" element={<DesignScreen />} />
+          <Route path="/wrapped" element={<WrappedScreen />} />
+          <Route path="/order" element={<OrderScreen />} />
           <Route path="*" element={<ModeGuard />} />
         </Route>
       </Route>

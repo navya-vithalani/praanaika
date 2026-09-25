@@ -1,0 +1,9 @@
+import { ArrowRight, Check, FlaskConical, ShieldCheck, Wind } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { BrandMark } from '../../components/brand/BrandMark';
+import { Mascot } from '../../components/mascot/Mascot';
+
+export function AboutScreen() {
+  const navigate = useNavigate();
+  return <main className="about-screen"><section className="about-hero"><BrandMark /><Mascot mood="curious" size={112} /><p className="eyebrow">Body, Environment, Baseline</p><h1>One life. One breath. One view.</h1><p>Praanaika brings personal check-ins, room readings, and wearable signals into one traceable view of your day.</p></section><section className="about-section"><span className="about-icon"><Wind /></span><h2>The missing layer is your day.</h2><p>A watch knows something about your body. A monitor knows something about your room. Praanaika looks at what changed for you, and what else was different around then.</p></section><section className="about-section about-section--plum"><span className="about-icon"><FlaskConical /></span><h2>Honest status</h2><div className="status-ladder"><p><Check /> Exposure and room monitoring work with off-the-shelf sensors.</p><p><Check /> Personal-baseline insight is being validated.</p><p><Check /> Metabolic and stress insights are hypotheses under test.</p><p><ShieldCheck /> Illness pattern-noticing is a long-term vision, never a claim.</p></div></section><section className="about-section"><h2>How we test</h2><p>We split by person and forward in time, compare against planted ground truth, preserve abstention, and test the parser separately. Demo readings are synthetic.</p><button className="button" onClick={() => navigate('/welcome')}>Start exploring <ArrowRight size={16} /></button></section><p className="about-disclaimer">Praanaika shares observations about your own patterns. It is not medical advice or a diagnosis. Your doctor makes every decision.</p></main>;
+}
