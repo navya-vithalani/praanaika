@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ArrowLeft, Check, CircleDashed, Gem, Plus, Save, ShoppingBag, Sparkles } from 'lucide-react';
+import { ArrowLeft, Check, CircleDashed, Gem, Save, ShoppingBag, Sparkles } from 'lucide-react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Card } from '../../components/ui/Card';
 
@@ -32,29 +32,32 @@ export function DesignScreen() {
   const hex = colors[accent] || '#879e8e';
 
   return <main className="screen design-screen"><button className="back-link" onClick={() => navigate(-1)}><ArrowLeft size={17} /> Back</button><header className="page-header"><div><p className="eyebrow">Design your own</p><h1>{isHub ? 'Your Hub' : 'Your Gem'}</h1></div><span className="design-kind"><DesignIcon size={19} /></span></header>
-  <Card className={`product-preview product-preview--${accent}`}>
-    <div className="product-preview__art" style={{ position: 'relative', width: '100%', height: '200px', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', borderRadius: '12px' }}>
-      {/* Base layer PNG: Place your base image in /public/assets/ and reference it here */}
+  <Card className={`product-preview product-preview--${accent}`} style={{ alignItems: 'center', justifyContent: 'center'}}>
+    <div className="product-preview__art" style={{ position: 'relative', width: '100%', height: '240px', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', borderRadius: '12px' }}>
       <img src={`/assets/${isHub ? 'hub' : 'gem'}-base.png`} style={{ position: 'absolute', width: '100%', height: '100%', objectFit: 'contain', opacity: 0.2 }} alt="" onError={(e) => (e.currentTarget.style.display = 'none')} />
-      {isHub ? (
-        <svg viewBox="0 0 200 200" style={{ width: '160px', height: '160px', zIndex: 1 }}>
-          <circle cx="100" cy="100" r="90" fill="none" stroke={hex} strokeWidth="8" opacity="0.3" />
-          <circle cx="100" cy="100" r="70" fill={hex} opacity="0.8" />
-          <path d="M50 100 Q100 50 150 100 T50 100" fill="none" stroke="#fff" strokeWidth="4" opacity="0.5" />
-          <circle cx="100" cy="100" r="20" fill="rgba(255,255,255,0.9)" />
-        </svg>
-      ) : (
-        <svg viewBox="0 0 200 200" style={{ width: '120px', height: '120px', zIndex: 1 }}>
-          <polygon points="100,20 180,70 180,150 100,190 20,150 20,70" fill={hex} opacity="0.8" />
-          <polygon points="100,40 160,80 160,140 100,170 40,140 40,80" fill="none" stroke="#fff" strokeWidth="4" opacity="0.5" />
-          <circle cx="100" cy="110" r="25" fill="rgba(255,255,255,0.9)" />
-        </svg>
-      )}
+      <div style={{ position: 'relative', zIndex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '12px' }}>
+        {isHub ? (
+          <svg viewBox="0 0 200 200" style={{ width: '170px', height: '170px', alignItems: 'center', justifyContent: 'center' }}>
+            <circle cx="100" cy="100" r="90" fill="none" stroke={hex} strokeWidth="8" opacity="0.3" />
+            <circle cx="100" cy="100" r="70" fill={hex} opacity="0.8" />
+            <path d="M50 100 Q100 50 150 100 T50 100" fill="none" stroke="#fff" strokeWidth="4" opacity="0.5" />
+            <circle cx="100" cy="100" r="20" fill="rgba(255,255,255,0.9)" />
+          </svg>
+        ) : (
+          <svg viewBox="0 0 200 200" style={{ width: '130px', height: '130px' }}>
+            <polygon points="100,20 180,70 180,150 100,190 20,150 20,70" fill={hex} opacity="0.8" />
+            <polygon points="100,40 160,80 160,140 100,170 40,140 40,80" fill="none" stroke="#fff" strokeWidth="4" opacity="0.5" />
+            <circle cx="100" cy="110" r="25" fill="rgba(255,255,255,0.9)" />
+          </svg>
+        )}
+        <div style={{ textAlign: 'center' }}>
+          <span style={{ fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.06em', color: 'rgba(255,255,255,0.6)', fontWeight: 700 }}>Live preview</span>
+          <h2 style={{ color: '#fff', marginTop: '4px' }}>{selected}</h2>
+        </div>
+      </div>
     </div>
-    <span className="card-kicker">Live preview</span><h2>{selected}</h2>
-    <p>Base image can be added at <code>/public/assets/{isHub ? 'hub' : 'gem'}-base.png</code>.</p>
   </Card>
-  <section className="section-block"><div className="section-heading"><h2>Start with a preset</h2><button className="icon-button" aria-label="Create blank design"><Plus size={18} /></button></div><div className="preset-row">{presets.map((preset) => <button key={preset} className={`preset-card ${selected === preset ? 'is-selected' : ''}`} onClick={() => setSelected(preset)}><span className="preset-swatch" />{preset}</button>)}</div></section><section className="section-block"><div className="section-heading"><h2>Choose a colour</h2></div><div className="swatch-row">{['sage', 'terracotta', 'ochre', 'plum', 'sky'].map((color) => <button key={color} aria-label={color} className={`swatch swatch--${color} ${accent === color ? 'is-selected' : ''}`} onClick={() => setAccent(color)} />)}</div></section>
+  <section className="section-block"><div className="section-heading"><h2>Choose a colour</h2></div><div className="swatch-row">{['sage', 'terracotta', 'ochre', 'plum', 'sky'].map((color) => <button key={color} aria-label={color} className={`swatch swatch--${color} ${accent === color ? 'is-selected' : ''}`} onClick={() => setAccent(color)} />)}</div></section>
   {isHub && <section className="section-block"><div className="section-heading"><h2>Select Sensors</h2></div><div className="action-grid">
     <button className={`action-tile ${sensors.includes('co2') ? 'is-selected' : ''}`} onClick={() => toggleSensor('co2')} style={{ border: sensors.includes('co2') ? '2px solid var(--color-primary)' : '' }}><strong>CO₂</strong><small>+₹1,000</small></button>
     <button className={`action-tile ${sensors.includes('pm25') ? 'is-selected' : ''}`} onClick={() => toggleSensor('pm25')} style={{ border: sensors.includes('pm25') ? '2px solid var(--color-primary)' : '' }}><strong>PM2.5</strong><small>+₹1,000</small></button>

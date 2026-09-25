@@ -65,7 +65,9 @@ export function WelcomeScreen() {
     <main className="welcome-page">
       <div className="welcome-page__wash" aria-hidden="true" />
       <section className="welcome-content" aria-labelledby="welcome-title">
-        <BrandMark />
+        <div style={{ transform: 'scale(1.35)', transformOrigin: 'left center', marginBottom: '8px' }}>
+          <BrandMark />
+        </div>
         <div className="welcome-hero">
           <div className="welcome-hero__copy">
             <p className="eyebrow">{TAGLINE}</p>
