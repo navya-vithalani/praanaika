@@ -17,6 +17,7 @@ export function useActiveData() {
     checkins: mode === 'demo' ? demoDataset.checkins : ownCheckins,
     logs: mode === 'demo' ? demoDataset.logs : ownLogs,
     insights,
+    sessions: mode === 'demo' ? demoDataset.sessions : [],
     isSynthetic: mode === 'demo',
     demoDay,
   }), [mode, demoDay, ownCheckins, ownLogs, ownProfile, insights]);

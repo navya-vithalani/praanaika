@@ -57,8 +57,22 @@ function createInsights(): InsightCard[] {
     ['abstain', 38, ['self'], 'direct', 'abstain', 'I’m not sure yet about late dinners.', 'There are only a few late-dinner nights so far. I need more of your own check-ins before I can compare them fairly.', ['3 late-dinner entries', '2 next-morning check-ins']],
     ['sensor', 40, ['hub'], 'direct', 'sensor_issue', 'I noticed a possible Hub sensor issue.', 'The VOC reading stayed almost flat for about 6 hours. I am marking it as a sensor issue, not a change in you.', ['VOC stream flat-lined for 6 hours']],
     ['noise', 43, ['hub', 'self'], 'personal', 'My afternoons were noisier than usual.', 'A construction stretch coincided with lower afternoon check-ins. I cannot say why they went together.', ['Hub noise averaged 70 dB', '12 afternoon check-ins']],
+    ['temp', 45, ['hub', 'self'], 'direct', 'pattern', 'A warmer room aligned with feeling tired.', 'On 3 warmer days, your energy check-ins were lower. This is an observation of a pattern.', ['Hub temp above 26C', '3 tired check-ins']],
+    ['sleep-1', 46, ['gem', 'self'], 'personal', 'sleep', 'My sleep was shorter when I took paracetamol.', 'This happened twice. Could be the illness, not the medication itself.', ['Gem sleep tracking', '2 paracetamol logs']],
+    ['noise-2', 47, ['hub'], 'direct', 'exposure', 'Noise levels spiked early morning.', 'Construction noise or traffic was recorded around 6 AM.', ['Hub noise above 65 dB']],
+    ['voc-2', 48, ['gem', 'self'], 'personal', 'exposure', 'VOCs were high during my commute.', 'Your gem detected elevated VOC levels while you were outside.', ['Gem VOC out above 30']],
+    ['co2-2', 49, ['hub'], 'direct', 'pattern', 'CO₂ levels are rising earlier.', 'Usually, your room gets stuffy around midnight, but recently it started at 10 PM.', ['Hub CO₂ pattern shifted']],
+    ['dust-2', 50, ['hub', 'self'], 'personal', 'exposure', 'PM2.5 rose while I was cooking.', 'Your cooking log matches a spike in PM2.5 in the living area.', ['Hub PM2.5 above 50', '1 cooking log']],
+    ['abstain-2', 51, ['self'], 'direct', 'abstain', 'I’m not sure about your new exercise routine.', 'You only have 2 logs of yoga. I need more data to see a pattern.', ['2 yoga logs']],
+    ['sensor-2', 52, ['gem'], 'direct', 'sensor_issue', 'Gem connection was lost briefly.', 'The Gem stopped sending data for 1 hour yesterday.', ['Gem data gap']],
+    ['sleep-2', 53, ['hub', 'self'], 'personal', 'sleep', 'Better sleep on cooler nights.', 'When the room was below 22C, your sleep efficiency was higher.', ['Hub temp below 22C', 'Higher sleep efficiency']],
+    ['noise-3', 54, ['hub', 'self'], 'direct', 'pattern', 'Quiet mornings correspond to focused check-ins.', 'On 5 mornings with low noise, you tagged "Focused".', ['Hub noise below 40 dB', '5 focused check-ins']],
+    ['voc-3', 55, ['gem'], 'personal', 'exposure', 'Skin VOC showed a slight increase.', 'I noticed a change in skin VOC yesterday. No related check-ins.', ['Gem skin VOC elevated']],
+    ['temp-2', 56, ['hub'], 'direct', 'pattern', 'Humidity dropped significantly.', 'The room humidity was lower than usual yesterday.', ['Hub humidity below 40%']],
+    ['co2-3', 56, ['hub', 'self'], 'personal', 'pattern', 'Stuffy air and headaches.', 'You logged a headache on a day when CO2 was high.', ['Hub CO2 above 1200', '1 headache tag']],
+    ['dust-3', 56, ['hub'], 'direct', 'exposure', 'Air quality improved after rain.', 'PM2.5 dropped significantly after 4 PM yesterday.', ['Hub PM2.5 dropped']]
   ] as const;
-  return cards.map(([id, day, sources, tier, kind, headline, body, evidence]) => ({ id: `insight-${id}`, dayIndex: day, createdAt: iso(day, 20), expiresAt: iso(day + 1, 20), sources: [...sources], tier, kind, headline, body, evidence })) as InsightCard[];
+  return cards.map(([id, day, sources, tier, kind, headline, body, evidence]) => ({ id: `insight-${id}`, dayIndex: day, createdAt: iso(day as number, 20), expiresAt: iso((day as number) + 1, 20), sources: [...(sources as unknown as string[])], tier, kind, headline, body, evidence })) as InsightCard[];
 }
 
 export function createDemoDataset(): DemoDataset {
